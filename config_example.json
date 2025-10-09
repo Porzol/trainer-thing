@@ -1,12 +1,12 @@
 {
   "run_name": "efficientnet_baseline",
   "model": "efficientnet",
-  "batch_size": 32,
-  "epochs": 100,
-  "learning_rate": 0.001,
+  "batch_size": 64,
+  "epochs": 1,
+  "learning_rate": 0.1,
   "patience": 10,
   "dropout": 0.5,
   "checkpoint_interval": 5,
   "activation_function": "relu",
-  "dataset_path": "Dataset/Cam2"
+  "dataset_path": "dataset/Cam2"
 }
