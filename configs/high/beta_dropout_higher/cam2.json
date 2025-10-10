@@ -1,0 +1,12 @@
+{
+  "run_name": "high_beta_dropout_higher_cam2",
+  "model": "resnetv2",
+  "batch_size": 512,
+  "epochs": 50,
+  "learning_rate": 0.001,
+  "patience": 5,
+  "dropout": 0.6,
+  "checkpoint_interval": 3,
+  "activation_function": "relu",
+  "dataset_path": "dataset/Cam2"
+}
