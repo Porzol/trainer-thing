@@ -283,7 +283,8 @@ class DistractionTrainer:
             else:
                 self.patience_counter += 1
             
-            if (epoch + 1) % self.config['checkpoint_interval'] == 0 or is_best:
+            should_checkpoint = (epoch + 1) % self.config['checkpoint_interval'] == 0
+            if should_checkpoint or is_best:
                 self.save_checkpoint(epoch + 1, {'train': train_metrics, 'val': val_metrics}, is_best)
                 self.save_visualizations(epoch + 1, val_metrics)
             

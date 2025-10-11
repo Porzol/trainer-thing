@@ -13,32 +13,36 @@ class DriverDistractionDataset(Dataset):
         
         self.data = []
         self.labels = []
-        self.classes = []
-        
-        class_to_idx = {}
-        
+
+        # Build mapping from label indices to class names
+        label_to_class = {}
+
         with open(split_path, 'r') as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
-                
+
                 parts = line.split('\t')
                 if len(parts) >= 3:
                     img_path = parts[1]
                     label = int(parts[2])
-                    
+
+                    # Extract class name from image path
                     class_name = img_path.split('/')[0]
-                    if class_name not in class_to_idx:
-                        class_to_idx[class_name] = len(self.classes)
-                        self.classes.append(class_name)
-                    
+
+                    # Map label index to class name (preserves original ordering)
+                    if label not in label_to_class:
+                        label_to_class[label] = class_name
+
                     full_path = os.path.join(root_dir, img_path)
                     if os.path.exists(full_path):
                         self.data.append(full_path)
                         self.labels.append(label)
-        
-        self.classes.sort()
+
+        # Create ordered list of class names based on label indices
+        max_label = max(label_to_class.keys()) if label_to_class else -1
+        self.classes = [label_to_class.get(i, f"class_{i}") for i in range(max_label + 1)]
         
     def __len__(self):
         return len(self.data)
