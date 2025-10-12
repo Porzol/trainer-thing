@@ -84,7 +84,9 @@ class DistractionTrainer:
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
         
-        self.train_dataset = DriverDistractionDataset(self.dataset_path, 'driver_train.txt', transform_train)
+        training_use_percent = self.config.get('training_use_percent', 100)
+
+        self.train_dataset = DriverDistractionDataset(self.dataset_path, 'driver_train.txt', transform_train, training_use_percent)
         self.val_dataset = DriverDistractionDataset(self.dataset_path, 'driver_val.txt', transform_val)
         self.test_dataset = DriverDistractionDataset(self.dataset_path, 'driver_test.txt', transform_val)
         
@@ -230,8 +232,11 @@ class DistractionTrainer:
             dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}}
         )
         
-    def save_visualizations(self, epoch, val_metrics):
-        vis_dir = self.run_dir / f"epoch_{epoch:02d}" / "visualizations"
+    def save_visualizations(self, epoch, val_metrics, is_best=False):
+        if is_best:
+            vis_dir = self.run_dir / "best" / "visualizations"
+        else:
+            vis_dir = self.run_dir / f"epoch_{epoch:02d}" / "visualizations"
         vis_dir.mkdir(parents=True, exist_ok=True)
         
         create_confusion_matrix(
@@ -286,7 +291,7 @@ class DistractionTrainer:
             should_checkpoint = (epoch + 1) % self.config['checkpoint_interval'] == 0
             if should_checkpoint or is_best:
                 self.save_checkpoint(epoch + 1, {'train': train_metrics, 'val': val_metrics}, is_best)
-                self.save_visualizations(epoch + 1, val_metrics)
+                self.save_visualizations(epoch + 1, val_metrics, is_best)
             
             if self.patience_counter >= self.config['patience']:
                 print(f"Early stopping after {epoch + 1} epochs")

@@ -5,12 +5,12 @@ from PIL import Image
 import pandas as pd
 
 class DriverDistractionDataset(Dataset):
-    def __init__(self, root_dir, split_file, transform=None):
+    def __init__(self, root_dir, split_file, transform=None, use_percent=100):
         self.root_dir = root_dir
         self.transform = transform
-        
+
         split_path = os.path.join(root_dir, split_file)
-        
+
         self.data = []
         self.labels = []
 
@@ -39,6 +39,14 @@ class DriverDistractionDataset(Dataset):
                     if os.path.exists(full_path):
                         self.data.append(full_path)
                         self.labels.append(label)
+
+        # Apply percentage sampling if use_percent < 100
+        if use_percent < 100:
+            total_samples = len(self.data)
+            num_samples = int(total_samples * use_percent / 100)
+            # Use first num_samples to maintain deterministic behavior
+            self.data = self.data[:num_samples]
+            self.labels = self.labels[:num_samples]
 
         # Create ordered list of class names based on label indices
         max_label = max(label_to_class.keys()) if label_to_class else -1

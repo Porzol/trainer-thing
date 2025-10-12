@@ -8,5 +8,6 @@
   "dropout": 0.5,
   "checkpoint_interval": 5,
   "activation_function": "relu",
-  "dataset_path": "dataset/Cam2"
+  "dataset_path": "dataset/Cam2",
+  "training_use_percent": 5
 }
