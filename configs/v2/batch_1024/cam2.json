@@ -1,0 +1,13 @@
+{
+  "run_name": "v2_batch_1024_cam2",
+  "model": "mobilenetv3",
+  "batch_size": 1024,
+  "epochs": 30,
+  "learning_rate": 0.001,
+  "patience": 3,
+  "dropout": 0.5,
+  "checkpoint_interval": 3,
+  "activation_function": "relu",
+  "dataset_path": "dataset/Cam2",
+  "training_use_percent": 100
+}
