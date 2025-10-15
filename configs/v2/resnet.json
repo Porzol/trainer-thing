@@ -1,9 +1,9 @@
 {
-  "run_name": "v2_lr_lower_cam2",
-  "model": "mobilenetv3",
+  "run_name": "v2_resnet_cam2",
+  "model": "resnetv2",
   "batch_size": 512,
-  "epochs": 30,
-  "learning_rate": 0.0001,
+  "epochs": 20,
+  "learning_rate": 0.01,
   "patience": 3,
   "dropout": 0.5,
   "checkpoint_interval": 3,
