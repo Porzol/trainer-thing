@@ -1,6 +1,6 @@
 {
   "run_name": "v2_smaller_batch_cam2",
-  "model": "mobilenetv3",
+  "model": "efficientnet",
   "batch_size": 128,
   "epochs": 20,
   "learning_rate": 0.01,

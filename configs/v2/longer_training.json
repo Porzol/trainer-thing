@@ -1,6 +1,6 @@
 {
   "run_name": "v2_longer_training_cam2",
-  "model": "mobilenetv3",
+  "model": "efficientnet",
   "batch_size": 256,
   "epochs": 40,
   "learning_rate": 0.01,

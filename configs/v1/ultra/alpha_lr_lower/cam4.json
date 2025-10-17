@@ -1,6 +1,6 @@
 {
   "run_name": "ultra_alpha_lr_lower_cam4",
-  "model": "mobilenetv3",
+  "model": "efficientnet",
   "batch_size": 1024,
   "epochs": 50,
   "learning_rate": 0.001,
