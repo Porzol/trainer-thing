@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib
+# Set non-interactive backend for headless servers to prevent hanging
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch

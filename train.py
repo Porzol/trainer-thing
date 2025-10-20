@@ -26,6 +26,28 @@ from utils.dataset import DriverDistractionDataset
 from utils.metrics import MetricsTracker
 from utils.visualizations import create_confusion_matrix, create_per_class_metrics, save_sample_predictions
 
+def get_optimal_num_workers():
+    """Automatically determine optimal number of workers for DataLoader.
+
+    Returns safe defaults that balance performance and stability:
+    - Respects DATALOADER_NUM_WORKERS env var if set
+    - Uses 75% of available CPUs by default
+    """
+    # Allow explicit override via environment variable
+    if 'DATALOADER_NUM_WORKERS' in os.environ:
+        try:
+            return int(os.environ['DATALOADER_NUM_WORKERS'])
+        except ValueError:
+            pass
+
+    # Get CPU count
+    cpu_count = os.cpu_count() or 4
+
+    # Use 75% of available CPUs
+    num_workers = max(1, int(cpu_count * 0.75))
+
+    return num_workers
+
 class DistractionTrainer:
     def __init__(self, config_path, dataset_path=None, force_cpu=False):
         with open(config_path, 'r') as f:
@@ -80,9 +102,44 @@ class DistractionTrainer:
         self.val_dataset = DriverDistractionDataset(self.dataset_path, 'driver_val.txt', transform_val)
         self.test_dataset = DriverDistractionDataset(self.dataset_path, 'driver_test.txt', transform_val)
         batch_size = self.config['batch_size']
-        self.train_loader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-        self.val_loader = DataLoader(self.val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-        self.test_loader = DataLoader(self.test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+
+        # Determine optimal num_workers: config > auto-detection
+        num_workers = self.config.get('num_workers', get_optimal_num_workers())
+
+        # Additional DataLoader settings for stability and performance
+        pin_memory = self.device.type == 'cuda'
+        persistent_workers = num_workers > 0  # Keep workers alive between epochs
+        prefetch_factor = 2 if num_workers > 0 else None  # Prefetch batches per worker
+
+        print(f"DataLoader configuration: num_workers={num_workers}, pin_memory={pin_memory}, persistent_workers={persistent_workers}")
+
+        self.train_loader = DataLoader(
+            self.train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers,
+            prefetch_factor=prefetch_factor
+        )
+        self.val_loader = DataLoader(
+            self.val_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers,
+            prefetch_factor=prefetch_factor
+        )
+        self.test_loader = DataLoader(
+            self.test_dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            persistent_workers=persistent_workers,
+            prefetch_factor=prefetch_factor
+        )
         
     def _setup_optimizer(self):
         self.criterion = nn.CrossEntropyLoss()
@@ -95,7 +152,7 @@ class DistractionTrainer:
         all_preds = []
         all_targets = []
         start_time = time.time()
-        pbar = tqdm(self.train_loader, desc="Training", leave=False)
+        pbar = tqdm(self.train_loader, desc="Training", leave=True)
         for batch_idx, (data, target) in enumerate(pbar):
             data, target = data.to(self.device), target.to(self.device)
             self.optimizer.zero_grad()
@@ -124,7 +181,7 @@ class DistractionTrainer:
         all_preds = []
         all_targets = []
         with torch.no_grad():
-            pbar = tqdm(self.val_loader, desc="Validation", leave=False)
+            pbar = tqdm(self.val_loader, desc="Validation", leave=True)
             for data, target in pbar:
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
@@ -186,13 +243,18 @@ class DistractionTrainer:
     def save_visualizations(self, epoch, val_metrics, is_best=False):
         vis_dir = self.run_dir / ("best" if is_best else f"epoch_{epoch:02d}") / "visualizations"
         vis_dir.mkdir(parents=True, exist_ok=True)
+        print("  - Creating confusion matrix...")
         create_confusion_matrix(val_metrics['targets'], val_metrics['predictions'],
                                self.train_dataset.classes, vis_dir / 'confusion_matrix.png')
+        print("  - Creating per-class metrics...")
         create_per_class_metrics(val_metrics['targets'], val_metrics['predictions'],
                                  self.train_dataset.classes, vis_dir / 'per_class_metrics.png')
+        print("  - Saving metrics history...")
         self.metrics_tracker.save_metrics_plot(vis_dir / 'metrics_history.png')
+        print("  - Saving sample predictions...")
         save_sample_predictions(self.model, self.test_loader, self.device,
                                self.train_dataset.classes, vis_dir / 'sample_predictions.png')
+        print("  - All visualizations saved.")
         
     def train(self):
         print(f"Starting training with config: {self.config}")
@@ -214,8 +276,11 @@ class DistractionTrainer:
                 self.patience_counter += 1
             should_checkpoint = (epoch + 1) % self.config['checkpoint_interval'] == 0
             if should_checkpoint or is_best:
+                print(f"Saving checkpoint for epoch {epoch + 1}...")
                 self.save_checkpoint(epoch + 1, {'train': train_metrics, 'val': val_metrics}, is_best)
+                print(f"Checkpoint saved. Generating visualizations...")
                 self.save_visualizations(epoch + 1, val_metrics, is_best)
+                print(f"Visualizations complete for epoch {epoch + 1}.")
             if self.patience_counter >= self.config['patience']:
                 print(f"Early stopping after {epoch + 1} epochs")
                 # Save final checkpoint if not already saved
