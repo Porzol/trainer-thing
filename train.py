@@ -16,6 +16,7 @@ import seaborn as sns
 import onnx
 import onnxruntime as ort
 from pathlib import Path
+from tqdm import tqdm
 
 from models.efficientnet import EfficientNetModel
 from models.mobilenetv3 import MobileNetV3Model
@@ -94,7 +95,8 @@ class DistractionTrainer:
         all_preds = []
         all_targets = []
         start_time = time.time()
-        for batch_idx, (data, target) in enumerate(self.train_loader):
+        pbar = tqdm(self.train_loader, desc="Training", leave=False)
+        for batch_idx, (data, target) in enumerate(pbar):
             data, target = data.to(self.device), target.to(self.device)
             self.optimizer.zero_grad()
             output = self.model(data)
@@ -105,6 +107,7 @@ class DistractionTrainer:
             pred = output.argmax(dim=1)
             all_preds.extend(pred.cpu().numpy())
             all_targets.extend(target.cpu().numpy())
+            pbar.set_postfix({'loss': f'{loss.item():.4f}'})
         epoch_time = time.time() - start_time
         return {
             'loss': running_loss / len(self.train_loader),
@@ -121,7 +124,8 @@ class DistractionTrainer:
         all_preds = []
         all_targets = []
         with torch.no_grad():
-            for data, target in self.val_loader:
+            pbar = tqdm(self.val_loader, desc="Validation", leave=False)
+            for data, target in pbar:
                 data, target = data.to(self.device), target.to(self.device)
                 output = self.model(data)
                 loss = self.criterion(output, target)
@@ -129,6 +133,7 @@ class DistractionTrainer:
                 pred = output.argmax(dim=1)
                 all_preds.extend(pred.cpu().numpy())
                 all_targets.extend(target.cpu().numpy())
+                pbar.set_postfix({'loss': f'{loss.item():.4f}'})
         return {
             'loss': running_loss / len(self.val_loader),
             'accuracy': accuracy_score(all_targets, all_preds),
@@ -213,6 +218,10 @@ class DistractionTrainer:
                 self.save_visualizations(epoch + 1, val_metrics, is_best)
             if self.patience_counter >= self.config['patience']:
                 print(f"Early stopping after {epoch + 1} epochs")
+                # Save final checkpoint if not already saved
+                if not should_checkpoint and not is_best:
+                    self.save_checkpoint(epoch + 1, {'train': train_metrics, 'val': val_metrics}, is_best=False)
+                    self.save_visualizations(epoch + 1, val_metrics, is_best=False)
                 break
         print(f"\nTraining completed. Best F1-score: {self.best_f1:.4f}")
         test_metrics = self.test_model()
