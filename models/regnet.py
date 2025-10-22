@@ -5,7 +5,7 @@ from .activations import get_activation
 class RegNetModel(nn.Module):
     def __init__(self, num_classes, dropout=0.5, activation='relu'):
         super(RegNetModel, self).__init__()
-        self.backbone = models.regnet_y_400mf(weights=models.RegNet_Y_400MF_Weights.IMAGENET1K_V2)
+        self.backbone = models.regnet_y_200mf(weights=models.RegNet_Y_200MF_Weights.IMAGENET1K_V1)
         in_features = self.backbone.fc.in_features
         self.backbone.fc = nn.Sequential(
             nn.Dropout(dropout),

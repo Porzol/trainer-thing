@@ -221,3 +221,6 @@ package-lock.json
 package.json
 
 archive/
+
+venv
+dataset

@@ -5,7 +5,7 @@ from .activations import get_activation
 class MobileNetV3Model(nn.Module):
     def __init__(self, num_classes, dropout=0.5, activation='relu'):
         super(MobileNetV3Model, self).__init__()
-        self.backbone = models.mobilenet_v3_large(weights=models.MobileNet_V3_Large_Weights.IMAGENET1K_V2)
+        self.backbone = models.mobilenet_v3_small(weights=models.MobileNet_V3_Small_Weights.IMAGENET1K_V1)
         in_features = self.backbone.classifier[0].in_features
         self.backbone.classifier = nn.Sequential(
             nn.Linear(in_features, 1280),

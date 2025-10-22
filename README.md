@@ -84,9 +84,9 @@ results/experiment_20241002_143022/
 ## Supported Models
 
 1. **EfficientNet-B0**: Efficient architecture with compound scaling
-2. **MobileNetV3-Large**: Lightweight model optimized for mobile deployment
-3. **RegNetY-400MF**: Regular network with optimized design space
-4. **ResNet-50 V2**: Deep residual network with improved training
+2. **MobileNetV3-Small**: Lightweight model optimized for mobile deployment
+3. **RegNetY-200MF**: Regular network with optimized design space
+4. **ResNet-18**: Deep residual network with improved training
 
 ## Metrics and Visualizations
 
