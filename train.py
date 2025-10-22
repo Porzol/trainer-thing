@@ -137,7 +137,7 @@ class DistractionTrainer:
             shuffle=False,
             num_workers=num_workers,
             pin_memory=pin_memory,
-            persistent_workers=persistent_workers,
+            persistent_workers=False,
             prefetch_factor=prefetch_factor
         )
         
@@ -232,6 +232,13 @@ class DistractionTrainer:
             'config': self.config
         }, checkpoint_dir / 'model.pth')
         self._export_onnx(checkpoint_dir / 'model.onnx')
+
+        if is_best:
+            with open(checkpoint_dir / 'epoch_info.txt', 'w') as f:
+                f.write(f"Best model from epoch {epoch}\n")
+                f.write(f"Val F1: {metrics['val']['f1_score']:.4f}\n")
+                f.write(f"Val Acc: {metrics['val']['accuracy']:.4f}\n")
+                f.write(f"Val Loss: {metrics['val']['loss']:.4f}\n")
         
     def _export_onnx(self, onnx_path):
         dummy_input = torch.randn(1, 3, 224, 224).to(self.device)
@@ -275,12 +282,21 @@ class DistractionTrainer:
             else:
                 self.patience_counter += 1
             should_checkpoint = (epoch + 1) % self.config['checkpoint_interval'] == 0
-            if should_checkpoint or is_best:
+            metrics_dict = {'train': train_metrics, 'val': val_metrics}
+
+            if should_checkpoint:
                 print(f"Saving checkpoint for epoch {epoch + 1}...")
-                self.save_checkpoint(epoch + 1, {'train': train_metrics, 'val': val_metrics}, is_best)
+                self.save_checkpoint(epoch + 1, metrics_dict, is_best=False)
                 print(f"Checkpoint saved. Generating visualizations...")
-                self.save_visualizations(epoch + 1, val_metrics, is_best)
+                self.save_visualizations(epoch + 1, val_metrics, is_best=False)
                 print(f"Visualizations complete for epoch {epoch + 1}.")
+
+            if is_best:
+                print(f"Saving best checkpoint for epoch {epoch + 1}...")
+                self.save_checkpoint(epoch + 1, metrics_dict, is_best=True)
+                print(f"Best checkpoint saved. Generating visualizations...")
+                self.save_visualizations(epoch + 1, val_metrics, is_best=True)
+                print(f"Visualizations complete for best checkpoint.")
             if self.patience_counter >= self.config['patience']:
                 print(f"Early stopping after {epoch + 1} epochs")
                 # Save final checkpoint if not already saved
