@@ -59,6 +59,7 @@ class DistractionTrainer:
         self.run_dir = Path(f"results/{self.config['run_name']}_{timestamp}")
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self.best_f1 = 0.0
+        self.patience = self.config.get('patience', 0)
         self.patience_counter = 0
         self.metrics_tracker = MetricsTracker()
         self._setup_model()
@@ -297,7 +298,7 @@ class DistractionTrainer:
                 print(f"Best checkpoint saved. Generating visualizations...")
                 self.save_visualizations(epoch + 1, val_metrics, is_best=True)
                 print(f"Visualizations complete for best checkpoint.")
-            if self.patience_counter >= self.config['patience']:
+            if self.patience >= 1 and self.patience_counter >= self.patience:
                 print(f"Early stopping after {epoch + 1} epochs")
                 # Save final checkpoint if not already saved
                 if not should_checkpoint and not is_best:
