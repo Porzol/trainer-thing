@@ -2,11 +2,11 @@
   "run_name": "v3_smaller_learning_rate_cam2",
   "model": "efficientnet",
   "batch_size": 256,
-  "epochs": 20,
+  "epochs": 10,
   "learning_rate": 0.001,
   "patience": 0,
   "dropout": 0.5,
-  "checkpoint_interval": 3,
+  "checkpoint_interval": 1,
   "activation_function": "relu",
   "dataset_path": "dataset/Cam2",
   "training_use_percent": 100
